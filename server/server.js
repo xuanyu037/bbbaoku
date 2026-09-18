@@ -1,9 +1,11 @@
 require("dotenv").config();
 const path = require("path");
 const express = require("express");
+const cron = require("node-cron");
 const { PRODUCTS, COD_SHIPPING_FEE } = require("./products");
 const { nextOrderId, saveOrder, getOrder, updateOrder } = require("./orders");
 const newebpay = require("./newebpay");
+const { runBackup } = require("./backup");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,6 +14,13 @@ const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "..", "public")));
+
+/* 每天凌晨 3:00（伺服器時間）自動把訂單備份上傳到 pCloud；
+ * 尚未設定 PCLOUD_EMAIL / PCLOUD_PASSWORD 時會安靜失敗，只在
+ * console 留下錯誤訊息，不影響網站其他功能運作。 */
+cron.schedule("0 3 * * *", () => {
+  runBackup().catch((err) => console.error("[自動備份] 失敗：", err.message));
+});
 
 /* ---------------------------------------------------------------
  * 建立訂單：由前端購物車送出 items + 客戶資料 + 結帳方式，
