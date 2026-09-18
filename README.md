@@ -9,26 +9,35 @@
 包安心官網/
 ├── public/                 前台網站（靜態檔案，由 server 或任意靜態伺服器提供）
 │   ├── index.html          首頁：影片、訂購須知彈窗、商品選購、品牌故事、尺寸指南、FAQ
-│   ├── checkout.html       結帳頁：收件資訊、貨到付款／線上結帳
+│   ├── checkout.html       結帳頁：收件資訊、貨到付款（宅配／7-11／全家）、送出訂單防呆滑塊
 │   ├── order-result.html   結帳完成後的結果頁
+│   ├── favicon.ico, site.webmanifest
 │   ├── css/style.css
 │   ├── js/data.js          商品資料 + 購物車（localStorage）
-│   ├── js/main.js          導覽列、訂購須知彈窗、購物車側欄
+│   ├── js/main.js          導覽列、訂購須知彈窗、購物車側欄、滾動淡入、加入購物車動畫
 │   ├── js/home.js          首頁商品渲染、FAQ 手風琴、影片控制
 │   ├── js/checkout.js      結帳頁邏輯、送出訂單、導向藍新金流
-│   └── assets/             商品圖片與介紹影片
+│   ├── js/confirm-slider.js 送出訂單前的拖曳貓咪防呆滑塊
+│   ├── js/paw-trail.js     滑鼠／觸控貓爪殘影裝飾
+│   ├── js/quotes.js        溫暖照護小語輪播
+│   ├── js/celebrate.js     訂單成立的愛心貓爪慶祝動畫
+│   ├── js/back-to-top.js   回到頂端貓爪按鈕
+│   └── assets/             商品圖片、介紹影片、favicon 圖示
 └── server/                 後端（Node.js / Express）
-    ├── server.js           API 路由
-    ├── newebpay.js          藍新金流 AES 加解密與簽章
-    ├── products.js          伺服器端商品目錄（金額以此為準）
-    ├── orders.js            訂單存取（JSON 檔案，示範用）
+    ├── server.js               API 路由 + 每日備份排程（node-cron）
+    ├── newebpay.js             藍新金流 AES 加解密與簽章
+    ├── products.js             伺服器端商品目錄（金額以此為準）
+    ├── orders.js               訂單存取（JSON 檔案，示範用）
+    ├── backup.js               每日訂單備份到 pCloud
+    ├── get-pcloud-token.js     一次性工具：用帳密換 pCloud auth token
     ├── package.json
-    └── .env.example         環境變數範例
+    └── .env.example            環境變數範例
 ```
 
 ## 功能對照需求
 
-- ✅ 兩種結帳方式：**貨到付款**（+NT$60 運費）／**線上結帳**（免運費，藍新金流）
+- ✅ 兩種結帳方式：**貨到付款**（+NT$60 運費，含宅配／7-11／全家取貨付款）／
+  **線上結帳**（免運費，藍新金流，目前顯示「即將開放」，待商店資訊備妥後啟用）
 - ✅ 藍新金流 MPG 全支付方式 API 串接（AES-256-CBC 加密 TradeInfo + SHA256 簽章）
 - ✅ 首頁開頭嵌入並自動播放介紹影片（`assets/video/intro.mp4`，靜音自動播放＋可切換聲音）
 - ✅ 首次進站自動彈出「訂購須知」視窗，提供明確關閉按鈕，並記住已讀狀態
@@ -107,10 +116,30 @@ npm start
 - `POST /api/newebpay/return`：使用者付款完成後，瀏覽器會被藍新導回這裡，
   解密結果後轉址到 `order-result.html` 顯示付款結果。
 
-## 尚未驗證的部分
+## 每日訂單備份（pCloud）
 
-此環境沒有安裝 Node.js，因此**後端 API 與藍新金流串接流程只完成程式撰寫，
-尚未實際執行測試**（前台頁面已用靜態伺服器實測：訂購須知彈窗、影片自動播放、
-導覽列放大動效、商品選購、購物車與結帳頁金額試算皆正常）。安裝 Node.js 後，
-建議依上方步驟啟動伺服器，並用藍新金流提供的**測試商店帳號**完整跑一次
-下單 → 導向收銀台 → 付款 → 導回結果頁的流程，確認無誤後才正式上線。
+- `server/get-pcloud-token.js`：**一次性**小工具，在 `server/` 目錄下執行
+  `node get-pcloud-token.js`，依畫面提示輸入 pCloud 登入信箱與密碼，換取一組
+  長期可用的 `auth token`。帳密只在那次執行時用來跟 pCloud 官方伺服器交換
+  token，不會被寫進任何檔案；換到的 token 才需要填進 `server/.env`
+  （`PCLOUD_AUTH_TOKEN`）。token 之後可以在 pCloud 網頁版「設定 > 安全性 >
+  已連接的應用程式」隨時撤銷，不需要更改密碼。
+- `server/backup.js`：把 `orders.json` 打包成 `orders-YYYY-MM-DD.json`，透過
+  pCloud 官方 API（`createfolderifnotexists` + `uploadfile`）上傳到
+  `PCLOUD_BACKUP_FOLDER`（預設 `/包安心備份`）。可用 `node backup.js` 手動
+  測試，或等 `server.js` 內建的 `node-cron` 排程每天凌晨 3:00 自動執行。
+- 帳號在歐洲機房的話，兩個腳本都要把 `PCLOUD_API_HOST` 設成
+  `eapi.pcloud.com`（預設是美國機房 `api.pcloud.com`）。
+
+## 已測試 / 尚未測試
+
+以下都已在本機用真實伺服器（Node.js + Express）實測過：訂購須知彈窗、影片
+自動播放、導覽列放大動效、商品選購、購物車、結帳頁金額試算、拖曳貓咪防呆
+滑塊送出訂單、COD 三種取貨方式（宅配／7-11／全家）的金額與數量限制驗證、
+訂單正確寫入 `orders.json`。藍新金流的 AES 加解密邏輯也已用符合規格長度的
+測試金鑰驗證過加密→解密往返結果正確。
+
+**尚未測試**的是藍新金流與 pCloud 的**真實帳號**串接——這兩者都需要使用者
+自己的機密資訊（藍新特店資料／pCloud 帳密），目前都還是用假資料驗證「程式
+邏輯與錯誤處理正確」，尚未跑過真實的下單付款或真實檔案上傳。等這兩項機密
+資訊備妥後，務必各自完整跑一次真實流程再正式上線。
