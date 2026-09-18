@@ -18,6 +18,13 @@ function currentShippingMethod() {
   return checked ? checked.value : "cod";
 }
 
+function currentCodMethod() {
+  const checked = document.querySelector('input[name="cod-sub"]:checked');
+  return checked ? checked.value : "home";
+}
+
+const COD_METHOD_LABEL = { home: "宅配到府", "711": "7-11 取貨付款", family: "全家取貨付款" };
+
 function renderSummary() {
   const lines = Cart.lines();
   const container = document.getElementById("summary-items");
@@ -45,9 +52,16 @@ function renderSummary() {
 function bindPayOptions() {
   document.querySelectorAll(".pay-option").forEach((opt) => {
     opt.addEventListener("click", () => {
+      if (opt.classList.contains("pay-option-disabled")) return;
       document.querySelectorAll(".pay-option").forEach((o) => o.classList.remove("active"));
       opt.classList.add("active");
-      opt.querySelector('input[type="radio"]').checked = true;
+      opt.querySelector('input[name="payment"]').checked = true;
+      renderSummary();
+    });
+  });
+  document.querySelectorAll('input[name="cod-sub"]').forEach((input) => {
+    input.addEventListener("change", () => {
+      document.getElementById("checkout-msg").textContent = "";
       renderSummary();
     });
   });
@@ -72,7 +86,15 @@ async function submitOrder() {
   }
 
   const shippingMethod = currentShippingMethod();
+  const codMethod = shippingMethod === "cod" ? currentCodMethod() : null;
   const items = Cart.lines().map((l) => ({ id: l.product.id, qty: l.qty }));
+  const totalQty = items.reduce((sum, i) => sum + i.qty, 0);
+
+  if (codMethod === "711" && totalQty > 1) {
+    msg.textContent = "7-11 取貨付款單筆限 1 包，包裹較多請改選宅配到府或全家取貨付款。";
+    if (window.PohConfirmSlider) window.PohConfirmSlider.reset();
+    return;
+  }
 
   if (window.PohConfirmSlider) window.PohConfirmSlider.setProcessing(true);
 
@@ -84,6 +106,7 @@ async function submitOrder() {
         items,
         customer: { name, phone, email, address, note },
         shippingMethod,
+        codMethod,
       }),
     });
     const data = await res.json();
@@ -91,7 +114,7 @@ async function submitOrder() {
 
     if (shippingMethod === "cod") {
       Cart.clear();
-      window.location.href = `order-result.html?orderId=${encodeURIComponent(data.orderId)}&status=cod`;
+      window.location.href = `order-result.html?orderId=${encodeURIComponent(data.orderId)}&status=cod&codMethod=${encodeURIComponent(codMethod)}`;
       return;
     }
 

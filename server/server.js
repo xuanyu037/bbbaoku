@@ -18,7 +18,7 @@ app.use(express.static(path.join(__dirname, "..", "public")));
  * 金額一律以伺服器端商品目錄重新計算，不信任前端傳入的價格。
  * ------------------------------------------------------------- */
 app.post("/api/orders", (req, res) => {
-  const { items, customer, shippingMethod } = req.body || {};
+  const { items, customer, shippingMethod, codMethod } = req.body || {};
 
   if (!Array.isArray(items) || items.length === 0) {
     return res.status(400).json({ error: "購物車是空的" });
@@ -29,8 +29,12 @@ app.post("/api/orders", (req, res) => {
   if (!["cod", "online"].includes(shippingMethod)) {
     return res.status(400).json({ error: "結帳方式不正確" });
   }
+  if (shippingMethod === "cod" && !["home", "711", "family"].includes(codMethod)) {
+    return res.status(400).json({ error: "取貨方式不正確" });
+  }
 
   let subtotal = 0;
+  let totalQty = 0;
   const resolvedItems = [];
   for (const raw of items) {
     const product = PRODUCTS[raw.id];
@@ -39,7 +43,12 @@ app.post("/api/orders", (req, res) => {
       return res.status(400).json({ error: `商品「${raw.id}」目前無法購買` });
     }
     subtotal += product.price * qty;
+    totalQty += qty;
     resolvedItems.push({ id: raw.id, name: product.name, price: product.price, qty });
+  }
+
+  if (shippingMethod === "cod" && codMethod === "711" && totalQty > 1) {
+    return res.status(400).json({ error: "7-11 取貨付款單筆限 1 包，請改選宅配到府或全家取貨付款" });
   }
 
   const shippingFee = shippingMethod === "cod" ? COD_SHIPPING_FEE : 0;
@@ -53,6 +62,7 @@ app.post("/api/orders", (req, res) => {
     shippingFee,
     amount,
     shippingMethod,
+    codMethod: shippingMethod === "cod" ? codMethod : null,
     customer: {
       name: customer.name,
       phone: customer.phone,

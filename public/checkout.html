@@ -7,6 +7,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/icons/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/icons/favicon-16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="assets/icons/apple-touch-icon.png">
+<link rel="manifest" href="site.webmanifest">
 <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -81,17 +86,31 @@
           <div class="pay-options">
             <label class="pay-option active" data-pay="cod">
               <input type="radio" name="payment" value="cod" checked />
-              <div>
+              <div style="flex:1;">
                 <div class="title">貨到付款</div>
-                <div class="desc">物流配送到府，由司機收取現金貨款。</div>
+                <div class="desc">選擇取貨方式，收件時支付現金貨款。</div>
                 <div class="fee">+ NT$60 運費</div>
+                <div class="cod-sub-options">
+                  <label class="cod-sub-option" data-sub="home">
+                    <input type="radio" name="cod-sub" value="home" checked />
+                    <span>宅配到府</span>
+                  </label>
+                  <label class="cod-sub-option" data-sub="711">
+                    <input type="radio" name="cod-sub" value="711" />
+                    <span>7-11 取貨付款<small>單筆限 1 包</small></span>
+                  </label>
+                  <label class="cod-sub-option" data-sub="family">
+                    <input type="radio" name="cod-sub" value="family" />
+                    <span>全家取貨付款</span>
+                  </label>
+                </div>
               </div>
             </label>
-            <label class="pay-option" data-pay="online">
-              <input type="radio" name="payment" value="online" />
+            <label class="pay-option pay-option-disabled" data-pay="online">
+              <input type="radio" name="payment" value="online" disabled />
               <div>
-                <div class="title">線上結帳（藍新金流）</div>
-                <div class="desc">支援信用卡／ATM／條碼等多種付款方式，付款成功後免運費。</div>
+                <div class="title">線上結帳（藍新金流）<span class="coming-soon">即將開放</span></div>
+                <div class="desc">支援信用卡／ATM／條碼等多種付款方式，付款成功後免運費。目前準備中，敬請期待。</div>
                 <div class="fee" style="color:#4d7c85;">免運費</div>
               </div>
             </label>
