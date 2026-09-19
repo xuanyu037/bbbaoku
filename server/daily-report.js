@@ -1,7 +1,7 @@
 /**
  * 每日結單報表：以「台北時間 00:00」為每日收單截止點，結算剛結束
  * 的那一天的全部訂單，產生 Excel 報表上傳到 pCloud，並接著更新
- * 當月的月報表（monthly-report.js）。
+ * 當週的週報表（weekly-report.js）與當月的月報表（monthly-report.js）。
  *
  * 手動測試：node daily-report.js [YYYY-MM-DD]（可指定要結算哪一天，預設是台北時間的昨天）
  * 自動排程：server.js 用 node-cron 在台北時間每天 00:00 呼叫 runDailyReport()
@@ -10,6 +10,7 @@ require("dotenv").config();
 const XLSX = require("xlsx");
 const { listOrdersBetween } = require("./orders");
 const { uploadToPCloud } = require("./pcloud-client");
+const { runWeeklyReport } = require("./weekly-report");
 const { runMonthlyReport } = require("./monthly-report");
 const {
   yesterdayTaipeiDateString,
@@ -75,7 +76,8 @@ async function runDailyReport(referenceDateStr) {
     console.log(`[日報] 已上傳 ${filename}（${orders.length} 筆訂單）到 pCloud ${result.folder}`);
   }
 
-  // 不論當天有沒有訂單，都重新整理一次當月報表，確保月報表永遠反映最新狀態
+  // 不論當天有沒有訂單，都重新整理一次當週、當月報表，確保永遠反映最新狀態
+  await runWeeklyReport(dateStr);
   await runMonthlyReport(dateStr);
 }
 

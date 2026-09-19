@@ -24,12 +24,18 @@
 │   ├── js/back-to-top.js   回到頂端貓爪按鈕
 │   └── assets/             商品圖片、介紹影片、favicon 圖示
 └── server/                 後端（Node.js / Express）
-    ├── server.js               API 路由 + 每日備份排程（node-cron）
-    ├── newebpay.js             藍新金流 AES 加解密與簽章
+    ├── server.js               API 路由 + 每日備份／報表排程（node-cron）
+    ├── newebpay.js             藍新金流 AES 加解密與簽章（目前暫停串接）
     ├── products.js             伺服器端商品目錄（金額以此為準）
-    ├── orders.js               訂單存取（JSON 檔案，示範用）
-    ├── backup.js               每日訂單備份到 pCloud
-    ├── get-pcloud-token.js     一次性工具：用帳密換 pCloud auth token
+    ├── orders.js               訂單存取（PostgreSQL，正式資料庫，永久保存）
+    ├── report-utils.js         報表共用工具：台北時區日期計算、訂單→Excel 列轉換
+    ├── daily-report.js         每日 00:00（台北）結算前一天訂單，產生日報並觸發週報／月報
+    ├── weekly-report.js        當週（週一～週日）彙總報表，每天重新整理一次
+    ├── monthly-report.js       當月彙總報表，每天重新整理一次
+    ├── export-orders.js        手動隨時匯出全部訂單成 Excel
+    ├── backup.js               全部訂單原始資料備份到 pCloud（每天凌晨 3:00）
+    ├── pcloud-client.js        pCloud 上傳共用邏輯
+    ├── get-pcloud-token.js     一次性工具：透過 pCloud OAuth 換取 auth token
     ├── package.json
     └── .env.example            環境變數範例
 ```
@@ -116,30 +122,45 @@ npm start
 - `POST /api/newebpay/return`：使用者付款完成後，瀏覽器會被藍新導回這裡，
   解密結果後轉址到 `order-result.html` 顯示付款結果。
 
-## 每日訂單備份（pCloud）
+## 訂單保存與自動報表
 
-- `server/get-pcloud-token.js`：**一次性**小工具，在 `server/` 目錄下執行
-  `node get-pcloud-token.js`，依畫面提示輸入 pCloud 登入信箱與密碼，換取一組
-  長期可用的 `auth token`。帳密只在那次執行時用來跟 pCloud 官方伺服器交換
-  token，不會被寫進任何檔案；換到的 token 才需要填進 `server/.env`
-  （`PCLOUD_AUTH_TOKEN`）。token 之後可以在 pCloud 網頁版「設定 > 安全性 >
+- **訂單資料**：一律即時寫入 PostgreSQL（正式站使用 Neon 免費方案），不會因
+  伺服器重啟或重新部署而消失，已用正式站真實重啟測試驗證過。隨時可用
+  `GET /api/admin/orders?secret=ADMIN_SECRET` 或 `node export-orders.js --remote`
+  直接把全部訂單資料抓出來，跟 pCloud 是否連上完全無關。
+- **每日報表**（`daily-report.js`）：每天台北時間 00:00 為收單截止點，結算
+  剛結束的那一天，產生「當日總覽／商品銷售彙總／訂單明細」三分頁 Excel。
+- **每週報表**（`weekly-report.js`）：以週一～週日為一週，每天結算完日報後
+  會重新整理一次當週報表（「每日彙總／商品銷售彙總／訂單明細」三分頁），
+  永遠反映當週至今的最新資料。
+- **每月報表**（`monthly-report.js`）：邏輯同週報，彙總範圍是當月 1 號至今。
+- 三份報表產生後都會呼叫 `pcloud-client.js` 上傳到 pCloud（日報存
+  `每日報表/`、週報存 `每週報表/`、月報存 `每月報表/`，皆在
+  `PCLOUD_BACKUP_FOLDER` 底下，預設 `/包安心備份`）。**在 pCloud OAuth
+  App 審核通過、`PCLOUD_AUTH_TOKEN` 設定好之前，這個上傳步驟每次都會失敗**，
+  只會在伺服器 log 留下錯誤訊息，不影響下單或資料保存，也不會讓伺服器當掉。
+- `server/get-pcloud-token.js`：**一次性**小工具，pCloud App 審核通過、拿到
+  `PCLOUD_CLIENT_ID` / `PCLOUD_CLIENT_SECRET` 後，在 `server/` 目錄下執行
+  `node get-pcloud-token.js`，依畫面提示完成瀏覽器 OAuth 授權，換取一組
+  長期可用的 `auth token`，填進 `server/.env`（`PCLOUD_AUTH_TOKEN`）以及
+  正式站的環境變數。token 之後可以在 pCloud 網頁版「設定 > 安全性 >
   已連接的應用程式」隨時撤銷，不需要更改密碼。
-- `server/backup.js`：把 `orders.json` 打包成 `orders-YYYY-MM-DD.json`，透過
-  pCloud 官方 API（`createfolderifnotexists` + `uploadfile`）上傳到
-  `PCLOUD_BACKUP_FOLDER`（預設 `/包安心備份`）。可用 `node backup.js` 手動
-  測試，或等 `server.js` 內建的 `node-cron` 排程每天凌晨 3:00 自動執行。
-- 帳號在歐洲機房的話，兩個腳本都要把 `PCLOUD_API_HOST` 設成
-  `eapi.pcloud.com`（預設是美國機房 `api.pcloud.com`）。
+- 帳號在歐洲機房的話，要把 `PCLOUD_API_HOST` 設成 `eapi.pcloud.com`
+  （預設是美國機房 `api.pcloud.com`）。
+- 各報表也都能手動立即執行測試，例如：`node weekly-report.js`、
+  `node monthly-report.js 2026-09-01`（可傳入 `YYYY-MM-DD` 指定要結算的
+  日期／所屬週／所屬月）。
 
 ## 已測試 / 尚未測試
 
-以下都已在本機用真實伺服器（Node.js + Express）實測過：訂購須知彈窗、影片
-自動播放、導覽列放大動效、商品選購、購物車、結帳頁金額試算、拖曳貓咪防呆
-滑塊送出訂單、COD 三種取貨方式（宅配／7-11／全家）的金額與數量限制驗證、
-訂單正確寫入 `orders.json`。藍新金流的 AES 加解密邏輯也已用符合規格長度的
+以下都已在本機及正式站用真實伺服器實測過：訂購須知彈窗、影片自動播放、
+導覽列放大動效、商品選購、購物車、結帳頁金額試算、拖曳貓咪防呆滑塊送出
+訂單、COD 三種取貨方式（宅配／7-11／全家）的金額與數量限制驗證、訂單正確
+寫入 PostgreSQL 並在正式站重啟後仍完整保留、日／週／月報表的台北時區日期
+區間計算與 Excel 產出邏輯。藍新金流的 AES 加解密邏輯也已用符合規格長度的
 測試金鑰驗證過加密→解密往返結果正確。
 
-**尚未測試**的是藍新金流與 pCloud 的**真實帳號**串接——這兩者都需要使用者
-自己的機密資訊（藍新特店資料／pCloud 帳密），目前都還是用假資料驗證「程式
+**尚未測試**的是藍新金流與 pCloud 的**真實帳號**串接——藍新已依使用者指示
+暫停處理，pCloud 則卡在 OAuth App 審核中。兩者目前都還是用假資料驗證「程式
 邏輯與錯誤處理正確」，尚未跑過真實的下單付款或真實檔案上傳。等這兩項機密
-資訊備妥後，務必各自完整跑一次真實流程再正式上線。
+資訊備妥後，務必各自完整跑一次真實流程再視為完全就緒。

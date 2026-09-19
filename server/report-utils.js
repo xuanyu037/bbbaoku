@@ -43,6 +43,54 @@ function taipeiMonthToDateRangeUTC(dateStr) {
   return { start, end, yearMonth: `${y}-${m}` };
 }
 
+/** 給定 YYYY-MM-DD（台北時區的某一天），回傳該天所屬「週一～週日」整週在台北時間的 UTC 區間，
+ * 以及可讀的日期範圍標籤與 ISO 週別（用於檔名，例如 2026-W38）。 */
+function taipeiWeekRangeUTC(dateStr) {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const dateUTC = new Date(Date.UTC(y, m - 1, d));
+  const dow = dateUTC.getUTCDay(); // 0=週日 ... 6=週六
+  const diffToMonday = dow === 0 ? -6 : 1 - dow;
+
+  const mondayUTC = new Date(dateUTC);
+  mondayUTC.setUTCDate(dateUTC.getUTCDate() + diffToMonday);
+  const sundayUTC = new Date(mondayUTC);
+  sundayUTC.setUTCDate(mondayUTC.getUTCDate() + 6);
+
+  const mondayStr = mondayUTC.toISOString().slice(0, 10);
+  const sundayStr = sundayUTC.toISOString().slice(0, 10);
+
+  const { start } = taipeiDayRangeUTC(mondayStr);
+  const { end } = taipeiDayRangeUTC(sundayStr);
+
+  // ISO 8601 週別計算，只用日曆日期，跟時區無關
+  const isoDate = new Date(dateUTC);
+  isoDate.setUTCDate(isoDate.getUTCDate() + 4 - (isoDate.getUTCDay() || 7));
+  const isoYearStart = new Date(Date.UTC(isoDate.getUTCFullYear(), 0, 1));
+  const isoWeek = Math.ceil(((isoDate - isoYearStart) / 86400000 + 1) / 7);
+
+  return {
+    start,
+    end,
+    weekStart: mondayStr,
+    weekEnd: sundayStr,
+    weekLabel: `${mondayStr} ~ ${sundayStr}`,
+    isoYearWeek: `${isoDate.getUTCFullYear()}-W${String(isoWeek).padStart(2, "0")}`,
+  };
+}
+
+/** 依日期彙總每天的訂單數與營業額，回傳給「每日彙總」分頁用的列陣列（週報／月報共用）。 */
+function buildDailyBreakdownRows(orders) {
+  const byDay = new Map();
+  for (const o of orders) {
+    const day = taipeiDateString(new Date(o.createdAt));
+    const cur = byDay.get(day) || { 日期: day, 訂單數: 0, 營業額: 0 };
+    cur.訂單數 += 1;
+    cur.營業額 += o.amount;
+    byDay.set(day, cur);
+  }
+  return Array.from(byDay.values()).sort((a, b) => (a.日期 < b.日期 ? -1 : 1));
+}
+
 function buildOrderRows(orders) {
   return orders.map((o) => ({
     訂單編號: o.orderId,
@@ -90,7 +138,9 @@ module.exports = {
   yesterdayTaipeiDateString,
   taipeiDayRangeUTC,
   taipeiMonthToDateRangeUTC,
+  taipeiWeekRangeUTC,
   buildOrderRows,
   buildProductSummaryRows,
+  buildDailyBreakdownRows,
   autoWidth,
 };
