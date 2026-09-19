@@ -1,6 +1,7 @@
 /**
- * 每日訂單備份：把 orders.json 打包成當天日期的檔案，
- * 透過 pCloud 官方 API 上傳到使用者的 pCloud 雲端硬碟。
+ * 每日訂單備份：從資料庫（Neon PostgreSQL）撈出全部訂單，
+ * 打包成當天日期的 JSON 檔案，透過 pCloud 官方 API 上傳到
+ * 使用者的 pCloud 雲端硬碟，當作資料庫以外的一份額外備援。
  *
  * 認證方式：使用 PCLOUD_AUTH_TOKEN（由 get-pcloud-token.js 產生），
  * 不使用帳號密碼——密碼只在產生 token 時用過一次，之後完全不需要。
@@ -10,10 +11,7 @@
  * 自動排程：server.js 會用 node-cron 每天固定時間呼叫 runBackup()
  */
 require("dotenv").config();
-const fs = require("fs");
-const path = require("path");
-
-const ORDERS_FILE = path.join(__dirname, "orders.json");
+const { listOrders } = require("./orders");
 
 function getConfig() {
   const { PCLOUD_AUTH_TOKEN, PCLOUD_API_HOST, PCLOUD_BACKUP_FOLDER } = process.env;
@@ -61,12 +59,13 @@ async function uploadFile(config, filename, content) {
 async function runBackup() {
   const config = getConfig();
 
-  if (!fs.existsSync(ORDERS_FILE)) {
+  const orders = await listOrders();
+  if (orders.length === 0) {
     console.log("[備份] 尚無訂單資料，略過本次備份。");
     return;
   }
 
-  const content = fs.readFileSync(ORDERS_FILE, "utf8");
+  const content = JSON.stringify(orders, null, 2);
   const filename = `orders-${todayStamp()}.json`;
 
   await ensureFolder(config);

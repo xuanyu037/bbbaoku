@@ -15,6 +15,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, "..", "public")));
 
+/* 讓 async 路由裡拋出的錯誤（例如資料庫連線失敗）能正確被
+ * Express 的錯誤處理機制接住，而不是讓伺服器整個當掉。 */
+function asyncRoute(fn) {
+  return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
+}
+
 /* 每天凌晨 3:00（伺服器時間）自動把訂單備份上傳到 pCloud；
  * 尚未設定 PCLOUD_EMAIL / PCLOUD_PASSWORD 時會安靜失敗，只在
  * console 留下錯誤訊息，不影響網站其他功能運作。 */
@@ -26,7 +32,7 @@ cron.schedule("0 3 * * *", () => {
  * 建立訂單：由前端購物車送出 items + 客戶資料 + 結帳方式，
  * 金額一律以伺服器端商品目錄重新計算，不信任前端傳入的價格。
  * ------------------------------------------------------------- */
-app.post("/api/orders", (req, res) => {
+app.post("/api/orders", asyncRoute(async (req, res) => {
   const { items, customer, shippingMethod, codMethod } = req.body || {};
 
   if (!Array.isArray(items) || items.length === 0) {
@@ -83,16 +89,16 @@ app.post("/api/orders", (req, res) => {
     createdAt: new Date().toISOString(),
   };
 
-  saveOrder(order);
+  await saveOrder(order);
   res.json({ orderId, amount, shippingFee, status: order.status });
-});
+}));
 
 /* ---------------------------------------------------------------
  * 線上結帳：以已建立的訂單產生藍新金流 MPG 表單參數。
  * 需先在 server/.env 設定 NEWEBPAY_MERCHANT_ID / HASHKEY / HASHIV。
  * ------------------------------------------------------------- */
-app.post("/api/checkout/newebpay/:orderId", (req, res) => {
-  const order = getOrder(req.params.orderId);
+app.post("/api/checkout/newebpay/:orderId", asyncRoute(async (req, res) => {
+  const order = await getOrder(req.params.orderId);
   if (!order) return res.status(404).json({ error: "找不到訂單" });
   if (order.shippingMethod !== "online") {
     return res.status(400).json({ error: "此訂單非線上付款" });
@@ -116,12 +122,12 @@ app.post("/api/checkout/newebpay/:orderId", (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
-});
+}));
 
 /* ---------------------------------------------------------------
  * 藍新背景通知（Server to Server）：驗證簽章後更新訂單狀態。
  * ------------------------------------------------------------- */
-app.post("/api/newebpay/notify", (req, res) => {
+app.post("/api/newebpay/notify", async (req, res) => {
   try {
     const { TradeInfo, TradeSha } = req.body;
     const { hashKey, hashIv } = newebpay.getConfig();
@@ -133,7 +139,7 @@ app.post("/api/newebpay/notify", (req, res) => {
     const orderId = result.MerchantOrderNo;
     const paid = result.Status === "SUCCESS";
 
-    updateOrder(orderId, {
+    await updateOrder(orderId, {
       status: paid ? "paid" : "payment_failed",
       newebpayResult: result,
     });
@@ -162,18 +168,18 @@ app.post("/api/newebpay/return", (req, res) => {
   }
 });
 
-app.get("/api/orders/:orderId", (req, res) => {
-  const order = getOrder(req.params.orderId);
+app.get("/api/orders/:orderId", asyncRoute(async (req, res) => {
+  const order = await getOrder(req.params.orderId);
   if (!order) return res.status(404).json({ error: "找不到訂單" });
   res.json(order);
-});
+}));
 
 /* ---------------------------------------------------------------
  * 後台用：列出全部訂單（供匯出報表使用）。以 ADMIN_SECRET 保護，
  * 避免任何人都能撈走客戶資料。用法：
  *   GET /api/admin/orders?secret=你設定的ADMIN_SECRET
  * ------------------------------------------------------------- */
-app.get("/api/admin/orders", (req, res) => {
+app.get("/api/admin/orders", asyncRoute(async (req, res) => {
   const secret = process.env.ADMIN_SECRET;
   if (!secret) {
     return res.status(500).json({ error: "尚未設定 ADMIN_SECRET，請先在 .env 設定後端管理密鑰" });
@@ -181,7 +187,16 @@ app.get("/api/admin/orders", (req, res) => {
   if (req.query.secret !== secret) {
     return res.status(401).json({ error: "未授權" });
   }
-  res.json(listOrders());
+  res.json(await listOrders());
+}));
+
+/* 統一錯誤處理：async 路由拋出的錯誤（例如資料庫連線失敗）
+ * 都會被 asyncRoute 轉送到這裡，回傳乾淨的錯誤訊息而不是讓
+ * 伺服器整個當掉。 */
+app.use((err, req, res, next) => {
+  console.error("[未預期錯誤]", err);
+  if (res.headersSent) return next(err);
+  res.status(500).json({ error: "系統發生錯誤，請稍後再試" });
 });
 
 app.listen(PORT, () => {

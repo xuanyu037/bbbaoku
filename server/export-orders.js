@@ -69,7 +69,7 @@ function autoWidth(rows) {
 
 async function main() {
   const useRemote = process.argv.includes("--remote");
-  const orders = useRemote ? await fetchRemoteOrders() : listOrders();
+  const orders = useRemote ? await fetchRemoteOrders() : await listOrders();
 
   if (orders.length === 0) {
     console.log("目前沒有任何訂單資料可以匯出。");

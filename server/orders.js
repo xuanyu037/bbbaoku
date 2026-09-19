@@ -1,23 +1,27 @@
 /**
- * 極簡訂單儲存：以 JSON 檔案落地，僅供開發／小量營運示範使用。
- * 正式上線建議換成真正的資料庫（PostgreSQL / MySQL / SQLite 等）。
+ * 訂單儲存：使用 PostgreSQL（Neon）永久保存，取代原本會在伺服器
+ * 重啟／重新部署時遺失的本機 JSON 檔案。訂單整包存成 JSONB，
+ * 保留跟原本 orders.json 完全一樣的資料結構，不需要另外設計欄位。
  */
-const fs = require("fs");
-const path = require("path");
+const { Pool } = require("pg");
 
-const FILE = path.join(__dirname, "orders.json");
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 
-function readAll() {
-  if (!fs.existsSync(FILE)) return {};
-  try {
-    return JSON.parse(fs.readFileSync(FILE, "utf8"));
-  } catch (e) {
-    return {};
+let schemaReady = null;
+function ensureSchema() {
+  if (!schemaReady) {
+    schemaReady = pool.query(`
+      CREATE TABLE IF NOT EXISTS orders (
+        order_id TEXT PRIMARY KEY,
+        data JSONB NOT NULL,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )
+    `);
   }
-}
-
-function writeAll(data) {
-  fs.writeFileSync(FILE, JSON.stringify(data, null, 2), "utf8");
+  return schemaReady;
 }
 
 function nextOrderId() {
@@ -27,29 +31,35 @@ function nextOrderId() {
   return `POH${stamp}${rand}`;
 }
 
-function saveOrder(order) {
-  const all = readAll();
-  all[order.orderId] = order;
-  writeAll(all);
+async function saveOrder(order) {
+  await ensureSchema();
+  await pool.query(
+    `INSERT INTO orders (order_id, data, created_at)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (order_id) DO UPDATE SET data = EXCLUDED.data`,
+    [order.orderId, order, order.createdAt || new Date().toISOString()]
+  );
   return order;
 }
 
-function getOrder(orderId) {
-  const all = readAll();
-  return all[orderId] || null;
+async function getOrder(orderId) {
+  await ensureSchema();
+  const { rows } = await pool.query(`SELECT data FROM orders WHERE order_id = $1`, [orderId]);
+  return rows[0] ? rows[0].data : null;
 }
 
-function updateOrder(orderId, patch) {
-  const all = readAll();
-  if (!all[orderId]) return null;
-  all[orderId] = { ...all[orderId], ...patch };
-  writeAll(all);
-  return all[orderId];
+async function updateOrder(orderId, patch) {
+  const current = await getOrder(orderId);
+  if (!current) return null;
+  const updated = { ...current, ...patch };
+  await pool.query(`UPDATE orders SET data = $2 WHERE order_id = $1`, [orderId, updated]);
+  return updated;
 }
 
-function listOrders() {
-  const all = readAll();
-  return Object.values(all).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+async function listOrders() {
+  await ensureSchema();
+  const { rows } = await pool.query(`SELECT data FROM orders ORDER BY created_at DESC`);
+  return rows.map((r) => r.data);
 }
 
 module.exports = { nextOrderId, saveOrder, getOrder, updateOrder, listOrders };
