@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /checkout.html
+Disallow: /order-result.html
+Disallow: /api/
+
+Sitemap: https://bbbaoku.com/sitemap.xml
