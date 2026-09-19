@@ -1,6 +1,7 @@
 /**
- * 一次性小工具：用你的 pCloud 帳密換一組長期可用的 auth token，
- * 之後備份功能只需要這組 token，不需要再用到你的密碼。
+ * 一次性小工具：用你的 pCloud 帳密（若有兩步驟驗證，還會多問一次驗證碼）
+ * 換一組長期可用的 auth token，之後備份功能只需要這組 token，不需要再用
+ * 到你的密碼。
  *
  * 這個腳本只在「你自己的電腦」執行、只跟 pCloud 官方伺服器通訊，
  * 帳密不會傳給任何第三方，也不會被寫進任何檔案（輸入的密碼只存在
@@ -24,20 +25,38 @@ function ask(rl, question) {
   });
 }
 
+async function login(email, password, code) {
+  let url = `https://${API_HOST}/userinfo?getauth=1&username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
+  if (code) url += `&code=${encodeURIComponent(code)}`;
+  const res = await fetch(url);
+  return res.json();
+}
+
+function needsTfaCode(data) {
+  return data.result !== 0 && /code/i.test(data.error || "");
+}
+
 async function main() {
   console.log(`將連線到 https://${API_HOST}（如果你的帳號在歐洲機房，請先按 Ctrl+C 改用 PCLOUD_API_HOST=eapi.pcloud.com 重新執行）\n`);
 
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const email = await ask(rl, "pCloud 登入信箱：");
   const password = await ask(rl, "pCloud 密碼：");
+
+  let data = await login(email, password);
+  console.log("\n[第一次嘗試的完整回應]", JSON.stringify(data));
+
+  if (needsTfaCode(data)) {
+    console.log("\n這個帳號開了兩步驟驗證，請打開你的驗證 App，確認畫面上顯示的是「最新」的 6 位數驗證碼再輸入（如果快跳號了，等它跳完新的一組再輸入）：");
+    const code = await ask(rl, "驗證碼：");
+    data = await login(email, password, code);
+    console.log("\n[輸入驗證碼後的完整回應]", JSON.stringify(data));
+  }
+
   rl.close();
 
-  const url = `https://${API_HOST}/userinfo?getauth=1&username=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}`;
-  const res = await fetch(url);
-  const data = await res.json();
-
   if (data.result !== 0 || !data.auth) {
-    console.error("\n登入失敗：", data.error || JSON.stringify(data));
+    console.error("\n登入失敗，完整錯誤內容如上，請把整個畫面（含上面兩行 [完整回應]）複製貼給我");
     process.exit(1);
   }
 
