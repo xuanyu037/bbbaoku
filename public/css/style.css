@@ -750,3 +750,77 @@ footer.site-footer { background: var(--color-teal-dark); color: #e9e4d8; padding
   0% { opacity: 0.55; transform: translate(-50%, -50%) scale(0.75); }
   100% { opacity: 0; transform: translate(-50%, -50%) scale(1.25); }
 }
+
+/* ---------------- 照護知識文章 ---------------- */
+.article-hub-hero {
+  padding: 64px 0 24px;
+  text-align: center;
+}
+.article-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 28px;
+  margin-top: 48px;
+}
+.article-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  padding: 32px;
+  transition: transform 0.4s var(--ease), box-shadow 0.35s;
+}
+.article-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-soft); }
+.article-card .eyebrow { display: block; margin-bottom: 10px; }
+.article-card h3 {
+  font-family: "Noto Serif TC", serif;
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+.article-card p { color: var(--color-text-soft); font-size: 14px; line-height: 1.8; }
+.article-card .read-more { display: inline-block; margin-top: 18px; font-size: 13px; color: var(--color-teal-dark); letter-spacing: 0.08em; }
+
+.article-wrap { padding: 72px 0 100px; }
+.article-header { max-width: 720px; margin: 0 auto 48px; text-align: center; }
+.article-header .section-title { max-width: none; }
+.article-meta { color: var(--color-text-soft); font-size: 13px; margin-top: 14px; letter-spacing: 0.04em; }
+.article-body {
+  max-width: 720px;
+  margin: 0 auto;
+  font-size: 16px;
+  line-height: 1.95;
+  color: var(--color-text);
+}
+.article-body h2 {
+  font-family: "Noto Serif TC", serif;
+  font-size: 24px;
+  margin: 48px 0 18px;
+  color: var(--color-teal-dark);
+}
+.article-body h3 { font-size: 18px; margin: 32px 0 12px; }
+.article-body p { margin: 0 0 20px; }
+.article-body ul, .article-body ol { margin: 0 0 20px; padding-left: 22px; }
+.article-body li { margin-bottom: 8px; }
+.article-body .note-box {
+  background: var(--color-bg-alt);
+  border-left: 3px solid var(--color-teal-dark);
+  padding: 18px 22px;
+  font-size: 14px;
+  color: var(--color-text-soft);
+  margin: 28px 0;
+}
+.article-cta {
+  max-width: 720px;
+  margin: 56px auto 0;
+  text-align: center;
+  padding: 40px 32px;
+  background: var(--color-bg-alt);
+}
+.article-cta p { color: var(--color-text-soft); margin-bottom: 20px; }
+.article-related {
+  max-width: 720px;
+  margin: 56px auto 0;
+  border-top: 1px solid var(--color-line);
+  padding-top: 32px;
+}
+.article-related h4 { font-size: 14px; letter-spacing: 0.12em; color: var(--color-text-soft); margin-bottom: 16px; text-transform: uppercase; }
+.article-related a { display: block; margin-bottom: 10px; color: var(--color-teal-dark); font-size: 15px; }
+.article-related a:hover { text-decoration: underline; }
