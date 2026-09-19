@@ -62,4 +62,17 @@ async function listOrders() {
   return rows.map((r) => r.data);
 }
 
-module.exports = { nextOrderId, saveOrder, getOrder, updateOrder, listOrders };
+/**
+ * 列出建立時間落在 [start, end]（含端點）區間內的訂單，依時間由舊到新排序。
+ * start / end 可以是 Date 物件或 ISO 字串。
+ */
+async function listOrdersBetween(start, end) {
+  await ensureSchema();
+  const { rows } = await pool.query(
+    `SELECT data FROM orders WHERE created_at >= $1 AND created_at <= $2 ORDER BY created_at ASC`,
+    [start, end]
+  );
+  return rows.map((r) => r.data);
+}
+
+module.exports = { nextOrderId, saveOrder, getOrder, updateOrder, listOrders, listOrdersBetween };

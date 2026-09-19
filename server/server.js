@@ -6,6 +6,7 @@ const { PRODUCTS, COD_SHIPPING_FEE } = require("./products");
 const { nextOrderId, saveOrder, getOrder, updateOrder, listOrders } = require("./orders");
 const newebpay = require("./newebpay");
 const { runBackup } = require("./backup");
+const { runDailyReport } = require("./daily-report");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,12 +22,27 @@ function asyncRoute(fn) {
   return (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 }
 
-/* 每天凌晨 3:00（伺服器時間）自動把訂單備份上傳到 pCloud；
- * 尚未設定 PCLOUD_EMAIL / PCLOUD_PASSWORD 時會安靜失敗，只在
- * console 留下錯誤訊息，不影響網站其他功能運作。 */
-cron.schedule("0 3 * * *", () => {
-  runBackup().catch((err) => console.error("[自動備份] 失敗：", err.message));
-});
+/* 每天凌晨 3:00（台北時間）自動把全部訂單原始資料備份上傳到 pCloud；
+ * 尚未設定 PCLOUD_AUTH_TOKEN 時會安靜失敗，只在 console 留下錯誤
+ * 訊息，不影響網站其他功能運作。 */
+cron.schedule(
+  "0 3 * * *",
+  () => {
+    runBackup().catch((err) => console.error("[自動備份] 失敗：", err.message));
+  },
+  { timezone: "Asia/Taipei" }
+);
+
+/* 每天台北時間 00:00 為每日收單截止點：結算剛結束的那一天，
+ * 產生「當日總覽／商品銷售彙總／訂單明細」三個分頁的 Excel 報表，
+ * 並同步更新當月的月報表，一併上傳到 pCloud。 */
+cron.schedule(
+  "0 0 * * *",
+  () => {
+    runDailyReport().catch((err) => console.error("[每日報表] 失敗：", err.message));
+  },
+  { timezone: "Asia/Taipei" }
+);
 
 /* ---------------------------------------------------------------
  * 建立訂單：由前端購物車送出 items + 客戶資料 + 結帳方式，
