@@ -3,7 +3,7 @@ const path = require("path");
 const express = require("express");
 const cron = require("node-cron");
 const { PRODUCTS, COD_SHIPPING_FEE } = require("./products");
-const { nextOrderId, saveOrder, getOrder, updateOrder } = require("./orders");
+const { nextOrderId, saveOrder, getOrder, updateOrder, listOrders } = require("./orders");
 const newebpay = require("./newebpay");
 const { runBackup } = require("./backup");
 
@@ -166,6 +166,22 @@ app.get("/api/orders/:orderId", (req, res) => {
   const order = getOrder(req.params.orderId);
   if (!order) return res.status(404).json({ error: "找不到訂單" });
   res.json(order);
+});
+
+/* ---------------------------------------------------------------
+ * 後台用：列出全部訂單（供匯出報表使用）。以 ADMIN_SECRET 保護，
+ * 避免任何人都能撈走客戶資料。用法：
+ *   GET /api/admin/orders?secret=你設定的ADMIN_SECRET
+ * ------------------------------------------------------------- */
+app.get("/api/admin/orders", (req, res) => {
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) {
+    return res.status(500).json({ error: "尚未設定 ADMIN_SECRET，請先在 .env 設定後端管理密鑰" });
+  }
+  if (req.query.secret !== secret) {
+    return res.status(401).json({ error: "未授權" });
+  }
+  res.json(listOrders());
 });
 
 app.listen(PORT, () => {

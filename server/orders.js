@@ -47,4 +47,9 @@ function updateOrder(orderId, patch) {
   return all[orderId];
 }
 
-module.exports = { nextOrderId, saveOrder, getOrder, updateOrder };
+function listOrders() {
+  const all = readAll();
+  return Object.values(all).sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
+
+module.exports = { nextOrderId, saveOrder, getOrder, updateOrder, listOrders };
