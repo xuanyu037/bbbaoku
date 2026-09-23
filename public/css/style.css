@@ -22,6 +22,26 @@
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* ---------------- 夜間模式：色彩變數覆寫 ----------------
+   --color-bg／--color-bg-alt 改成半透明深色，讓固定在最底層的
+   .night-sky 星空／地球背景能從卡片之間的縫隙透出來；
+   --color-surface 維持不透明深色，卡片文字才有足夠對比度可讀。 */
+:root[data-theme="dark"] {
+  --color-bg: rgba(8, 12, 20, 0.62);
+  --color-bg-alt: rgba(13, 18, 29, 0.58);
+  --color-surface: #131826;
+  --color-text: #eef0f6;
+  --color-text-soft: #a3aab8;
+  --color-line: rgba(255, 255, 255, 0.14);
+  --color-teal: #6cb0bb;
+  --color-teal-dark: #3f7f8c;
+  --color-pink: #e6a2b6;
+  --color-pink-dark: #c96a89;
+  --color-gold: #cdaa74;
+  --color-danger: #e2827a;
+  --shadow-soft: 0 18px 45px -18px rgba(0, 0, 0, 0.7);
+}
+
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
@@ -32,6 +52,22 @@ body {
   font-weight: 400;
   line-height: 1.75;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.6s ease, color 0.6s ease;
+}
+/* 夜間模式下 body 本身不上色，把「畫布」讓給 .night-sky（真正畫星空與地球的那層），
+   body 的半透明 --color-bg 疊在上面，星空才會透出來。 */
+:root[data-theme="dark"] body { background-color: transparent; }
+/* 切換夜間模式時，主要卡片／區塊的底色都平滑淡入淡出，不會忽然跳色。
+   帶 [data-reveal] 的元素（product-card／advantage-list li／article-card）
+   本身已經有進場用的 opacity/transform 轉場，疊加一個背景色轉場在某些瀏覽器上
+   會讓畫面卡在舊顏色不放（rendering 沒有正確更新），所以這裡先跳過它們，
+   切換時直接變色，不做漸變。 */
+.trust-strip, .advantage, .guide, .shop, .care-quote,
+footer.site-footer, .modal-card, .cart-drawer,
+.checkout-panel, .article-body, .faq-bot-panel,
+.faq-bot-header, .icon-btn, .pay-option, .cod-sub-option,
+.form-field input, .form-field textarea, .faq-bot-input, .faq-bot-chip {
+  transition: background-color 0.6s ease, color 0.6s ease, border-color 0.6s ease;
 }
 h1, h2, h3, h4, .serif {
   font-family: "Noto Serif TC", "Songti TC", serif;
@@ -112,7 +148,9 @@ header.site-header {
   background: rgba(250, 248, 244, 0.92);
   backdrop-filter: saturate(160%) blur(10px);
   border-bottom: 1px solid var(--color-line);
+  transition: background-color 0.6s ease, border-color 0.6s ease;
 }
+:root[data-theme="dark"] header.site-header { background: rgba(10, 14, 23, 0.78); }
 .nav-wrap {
   display: flex;
   align-items: center;
@@ -194,7 +232,8 @@ nav.main-nav a:hover::after { transform: scaleX(1); }
   display: flex; align-items: center; justify-content: center;
   padding: 0 3px;
 }
-.menu-toggle { display: none; }
+.theme-toggle { font-size: 17px; }
+.theme-toggle .theme-toggle-icon { line-height: 1; }
 
 /* ---------------- Hero video ---------------- */
 .hero {
@@ -352,6 +391,7 @@ nav.main-nav a:hover::after { transform: scaleX(1); }
 .product-type { font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-text-soft); }
 .product-name { font-size: 17px; }
 .product-meta { font-size: 12.5px; color: var(--color-text-soft); }
+.pack-note { display: inline-block; margin-top: 3px; font-size: 11px; color: var(--color-teal-dark); }
 .product-price-row { margin-top: auto; display: flex; align-items: baseline; justify-content: space-between; padding-top: 8px; border-top: 1px dashed var(--color-line); }
 .product-price { font-size: 20px; font-family: "Noto Serif TC", serif; color: var(--color-text); }
 .product-price small { font-size: 12px; font-family: "Noto Sans TC", sans-serif; color: var(--color-text-soft); }
@@ -491,6 +531,8 @@ footer.site-footer { background: var(--color-teal-dark); color: #e9e4d8; padding
   background: var(--color-bg); font-family: inherit;
 }
 .form-field input:focus, .form-field textarea:focus { outline: none; border-color: var(--color-teal-dark); }
+:root[data-theme="dark"] .form-field input,
+:root[data-theme="dark"] .form-field textarea { background: rgba(255, 255, 255, 0.05); color: var(--color-text); }
 .pay-options { display: grid; gap: 14px; }
 .pay-option {
   border: 1px solid var(--color-line); padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start;
@@ -557,7 +599,6 @@ footer.site-footer { background: var(--color-teal-dark); color: #e9e4d8; padding
 @media (max-width: 720px) {
   .container { padding: 0 20px; }
   nav.main-nav { display: none; }
-  .menu-toggle { display: flex; }
   .trust-strip .container { grid-template-columns: repeat(2, 1fr); }
   .trust-item:nth-child(3) { border-left: none; }
   .product-grid { grid-template-columns: 1fr; }
@@ -920,6 +961,7 @@ footer.site-footer { background: var(--color-teal-dark); color: #e9e4d8; padding
 .faq-bot-chip:hover { border-color: var(--color-teal-dark); color: var(--color-teal-dark); }
 .faq-bot-form { display: flex; gap: 8px; padding: 14px 18px; border-top: 1px solid var(--color-line); flex-shrink: 0; }
 .faq-bot-input { flex: 1; border: 1px solid var(--color-line); padding: 10px 12px; font-size: 13.5px; background: var(--color-bg); font-family: inherit; border-radius: 999px; }
+:root[data-theme="dark"] .faq-bot-input { background: rgba(255, 255, 255, 0.06); color: var(--color-text); }
 .faq-bot-input:focus { outline: none; border-color: var(--color-teal-dark); }
 .faq-bot-send { border: none; background: var(--color-teal-dark); color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 12.5px; letter-spacing: 0.06em; }
 .faq-bot-send:hover { background: var(--color-teal); }
@@ -927,4 +969,108 @@ footer.site-footer { background: var(--color-teal-dark); color: #e9e4d8; padding
 @media (max-width: 720px) {
   .faq-bot-root { right: 16px; bottom: 76px; }
   .faq-bot-panel { right: 12px; bottom: 140px; width: calc(100vw - 24px); max-height: 56vh; }
+}
+
+/* ============================================================
+   夜間模式切換鈕 + 星空／地球背景
+   切換鈕本身沒有其他功能，純粹切換 <html data-theme="dark">。
+   .night-sky 是固定在畫面最底層（z-index:-1）、由 JS 動態插入
+   到 <body> 最前面的裝飾層，只有夜間模式時淡入顯示；星空用多層
+   radial-gradient 模擬閃爍星點，地球用漸層＋兩個模糊色塊模擬
+   海洋、大陸與大氣光暈，並緩慢自轉營造「從宇宙看地球」的動態感。
+   ============================================================ */
+.night-sky {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 72% 26%, #122544 0%, #060a16 55%, #02030a 100%);
+  transition: opacity 0.9s ease;
+}
+:root[data-theme="dark"] .night-sky { opacity: 1; }
+
+.night-sky-stars { position: absolute; inset: -10%; background-repeat: repeat; }
+.night-sky-stars-1 {
+  background-image:
+    radial-gradient(1.3px 1.3px at 15% 20%, rgba(255,255,255,.95), transparent 60%),
+    radial-gradient(1px 1px at 35% 65%, rgba(255,255,255,.8), transparent 60%),
+    radial-gradient(1.4px 1.4px at 55% 15%, rgba(255,255,255,.9), transparent 60%),
+    radial-gradient(1px 1px at 75% 45%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1.2px 1.2px at 90% 75%, rgba(255,255,255,.85), transparent 60%),
+    radial-gradient(1px 1px at 10% 85%, rgba(255,255,255,.7), transparent 60%);
+  background-size: 340px 300px;
+  animation: nightSkyTwinkle 4.5s ease-in-out infinite;
+}
+.night-sky-stars-2 {
+  background-image:
+    radial-gradient(0.9px 0.9px at 25% 30%, rgba(255,255,255,.7), transparent 60%),
+    radial-gradient(1px 1px at 60% 60%, rgba(255,255,255,.6), transparent 60%),
+    radial-gradient(0.8px 0.8px at 80% 20%, rgba(255,255,255,.65), transparent 60%),
+    radial-gradient(1px 1px at 40% 85%, rgba(255,255,255,.55), transparent 60%);
+  background-size: 220px 260px;
+  animation: nightSkyTwinkle 6s ease-in-out infinite;
+  animation-delay: 1.2s;
+  opacity: .8;
+}
+.night-sky-stars-3 {
+  background-image:
+    radial-gradient(1.8px 1.8px at 30% 40%, rgba(200,225,255,.95), transparent 70%),
+    radial-gradient(2px 2px at 70% 70%, rgba(200,225,255,.9), transparent 70%),
+    radial-gradient(1.6px 1.6px at 85% 30%, rgba(200,225,255,.85), transparent 70%);
+  background-size: 480px 420px;
+  animation: nightSkyTwinkle 5s ease-in-out infinite;
+  animation-delay: 2.4s;
+  opacity: .9;
+}
+@keyframes nightSkyTwinkle { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+
+.night-sky-earth {
+  position: absolute;
+  right: -14%;
+  bottom: -20%;
+  width: 62vmax;
+  height: 62vmax;
+  max-width: 820px;
+  max-height: 820px;
+}
+.night-sky-earth-glow {
+  position: absolute;
+  inset: -8%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, rgba(130,190,255,.4), rgba(80,140,220,.12) 55%, transparent 76%);
+  filter: blur(3px);
+}
+.night-sky-earth-globe {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 30% 28%, #9fe6ff 0%, #33a0e0 22%, #1c66a3 46%, #123c6b 72%, #071a30 100%);
+  box-shadow: inset -34px -22px 90px rgba(0,0,0,.6), 0 0 110px rgba(90,160,255,.22);
+  animation: nightSkySpin 260s linear infinite;
+}
+.night-sky-earth-globe::before,
+.night-sky-earth-globe::after {
+  content: "";
+  position: absolute;
+  filter: blur(2px);
+}
+.night-sky-earth-globe::before {
+  width: 46%; height: 32%; top: 18%; left: 12%;
+  border-radius: 45% 55% 60% 40%;
+  background: rgba(63, 148, 96, .6);
+  transform: rotate(-14deg);
+}
+.night-sky-earth-globe::after {
+  width: 30%; height: 36%; top: 52%; left: 54%;
+  border-radius: 50% 50% 40% 60%;
+  background: rgba(80, 160, 100, .5);
+  transform: rotate(20deg);
+}
+@keyframes nightSkySpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .night-sky-stars, .night-sky-earth-globe { animation: none; }
 }

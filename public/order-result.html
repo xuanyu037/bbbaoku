@@ -2,6 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
+<script>try{if(localStorage.getItem('poh_theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>訂單結果｜包安心 Peace of Mind</title>
 <meta name="robots" content="noindex, nofollow" />
@@ -53,7 +54,9 @@
       <a href="index.html#faq">常見問題</a>
       <a href="index.html#footer">聯絡我們</a>
     </nav>
-    <div class="header-actions"></div>
+    <div class="header-actions">
+      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="切換夜間模式"><span class="theme-toggle-icon">🌙</span></button>
+    </div>
   </div>
 </header>
 
@@ -107,6 +110,7 @@
   }
 </script>
 <script src="js/celebrate.js"></script>
+<script src="js/theme-toggle.js"></script>
 <script src="js/back-to-top.js"></script>
 <script src="js/paw-trail.js"></script>
 <script src="js/faq-data.js"></script>

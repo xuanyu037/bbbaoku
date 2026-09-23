@@ -2,6 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8" />
+<script>try{if(localStorage.getItem('poh_theme')==='dark')document.documentElement.setAttribute('data-theme','dark');}catch(e){}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <meta name="google-site-verification" content="Nx6bYQnyJLn_-q86d8ky49NngELurP6HKvOqVMCotSw" />
 <title>包安心 Peace of Mind 官方網站｜台灣品牌成人紙尿褲・柔軟親膚 透氣呼吸</title>
@@ -189,7 +190,7 @@
       <a href="#footer">聯絡我們</a>
     </nav>
     <div class="header-actions">
-      <button class="icon-btn menu-toggle" aria-label="選單">☰</button>
+      <button class="icon-btn theme-toggle" data-theme-toggle aria-label="切換夜間模式"><span class="theme-toggle-icon">🌙</span></button>
       <a href="#" class="icon-btn" data-open-cart aria-label="購物車">
         🛍
         <span class="cart-count" data-cart-count>0</span>
@@ -407,6 +408,7 @@
 
 <script src="js/data.js"></script>
 <script src="js/main.js"></script>
+<script src="js/theme-toggle.js"></script>
 <script src="js/home.js"></script>
 <script src="js/quotes.js"></script>
 <script src="js/back-to-top.js"></script>

@@ -152,7 +152,7 @@
         dragging = false;
         wrap.classList.remove("confirmed");
         handle.classList.remove("dragging");
-        label.textContent = wrap.dataset.defaultLabel || "拖曳橘貓，滑到底送出訂單";
+        label.textContent = wrap.dataset.defaultLabel || "拖曳到底～完成訂購 ฅ^•ﻌ•^ฅ";
         metrics();
         setProgress(0);
       },

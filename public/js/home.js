@@ -22,7 +22,7 @@ function renderProducts() {
       <div class="product-info">
         <div class="product-type">${p.type}．${p.size}</div>
         <h3 class="product-name">${p.name}</h3>
-        <div class="product-meta">${p.fit}<br />每包 ${p.pack} 片</div>
+        <div class="product-meta">${p.fit}<br />每包 ${p.pack} 片<br /><span class="pack-note">4包為一箱</span></div>
         <div class="product-price-row">
           ${
             p.soldout

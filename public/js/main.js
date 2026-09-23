@@ -1,21 +1,12 @@
 /* 包安心 — 共用元件：導覽列、首次訂購須知彈窗、購物車側欄 */
 
 document.addEventListener("DOMContentLoaded", () => {
-  initMobileMenu();
   initNoticeModal();
   initCartDrawer();
   renderCartBadge();
   initRevealObserver();
   document.addEventListener("cart:change", renderCartBadge);
 });
-
-/* ---------- 行動裝置選單 ---------- */
-function initMobileMenu() {
-  const toggle = document.querySelector(".menu-toggle");
-  const nav = document.querySelector("nav.main-nav");
-  if (!toggle || !nav) return;
-  toggle.addEventListener("click", () => nav.classList.toggle("show-mobile"));
-}
 
 /* ---------- 首次進站訂購須知彈窗 ---------- */
 function initNoticeModal() {
