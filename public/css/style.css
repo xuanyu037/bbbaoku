@@ -851,6 +851,9 @@ footer.site-footer { background: var(--color-teal-dark); color: #e9e4d8; padding
   display: flex; flex-direction: column;
   z-index: 190;
 }
+/* author 樣式的 display:flex 特殊性跟 UA 內建的 [hidden]{display:none} 相同，
+   會蓋掉瀏覽器預設隱藏效果，所以要補這條規則讓 hidden 屬性真正生效。 */
+.faq-bot-panel[hidden] { display: none; }
 .faq-bot-header {
   display: flex; align-items: center; justify-content: space-between;
   padding: 16px 18px;
