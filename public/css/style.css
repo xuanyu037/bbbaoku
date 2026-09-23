@@ -428,11 +428,13 @@ footer.site-footer { background: var(--color-teal-dark); color: #e9e4d8; padding
   font-size: 16px; transition: transform .35s var(--ease);
 }
 .modal-close:hover { transform: rotate(90deg); background: var(--color-bg-alt); }
-.modal-card h3 { font-size: 20px; margin-bottom: 4px; position: relative; z-index: 1; }
+.modal-card h3 { font-size: 20px; margin-bottom: 14px; position: relative; z-index: 1; }
 .modal-card .eyebrow { display:block; margin-bottom: 6px; position: relative; z-index: 1; }
-.modal-card ol, .modal-card ul { padding-left: 20px; color: var(--color-text-soft); font-size: 13.5px; position: relative; z-index: 1; }
-.modal-card li { margin-bottom: 10px; }
-.modal-actions { margin-top: 24px; display: flex; justify-content: flex-end; gap: 12px; position: relative; z-index: 1; }
+.modal-card ol, .modal-card ul { padding-left: 22px; color: var(--color-text-soft); font-size: 13.5px; line-height: 1.8; position: relative; z-index: 1; }
+.modal-card li { margin-bottom: 14px; padding-left: 4px; }
+.modal-card li:last-child { margin-bottom: 0; }
+.modal-actions { margin-top: 28px; display: flex; justify-content: center; gap: 12px; position: relative; z-index: 1; }
+.modal-actions .btn { width: 100%; max-width: 320px; }
 .modal-watermark {
   position: absolute;
   top: 50%;
