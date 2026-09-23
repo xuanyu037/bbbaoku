@@ -5,6 +5,8 @@
 (function () {
   if (typeof FAQ_ENTRIES === "undefined") return;
 
+  const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
   const FALLBACK_ANSWER =
     "不好意思，我還沒學到這個問題的答案 🙏\n" +
     "可以換個說法問我看看，或直接聯繫真人客服協助您：\n" +
@@ -126,19 +128,31 @@
         );
         log.dataset.greeted = "1";
       }
-      input.focus();
+      // 手機上自動 focus 輸入框會叫出鍵盤，部分瀏覽器（尤其 iOS Safari）
+      // 對 fixed 定位元素會在鍵盤彈出時跑位，導致關閉鈕點不到，所以觸控裝置不自動 focus。
+      if (!isTouchDevice) input.focus();
     }
 
     function closePanel() {
       panel.hidden = true;
       toggle.classList.remove("is-open");
+      input.blur();
     }
 
-    toggle.addEventListener("click", () => {
+    toggle.addEventListener("click", (evt) => {
+      evt.stopPropagation();
       if (panel.hidden) openPanel();
       else closePanel();
     });
-    closeBtn.addEventListener("click", closePanel);
+    closeBtn.addEventListener("click", (evt) => {
+      evt.stopPropagation();
+      closePanel();
+    });
+
+    // 保底機制：不管關閉鈕有沒有點到，點面板以外的任何地方都能收起小幫手。
+    document.addEventListener("click", (evt) => {
+      if (!panel.hidden && !root.contains(evt.target)) closePanel();
+    });
 
     form.addEventListener("submit", (evt) => {
       evt.preventDefault();

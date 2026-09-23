@@ -837,6 +837,7 @@ footer.site-footer { background: var(--color-teal-dark); color: #e9e4d8; padding
   display: flex; align-items: center; justify-content: center;
   box-shadow: var(--shadow-soft);
   transition: transform 0.35s var(--ease), background 0.3s;
+  touch-action: manipulation;
 }
 .faq-bot-toggle:hover { transform: scale(1.08); }
 .faq-bot-toggle.is-open { background: var(--color-text); }
@@ -857,7 +858,13 @@ footer.site-footer { background: var(--color-teal-dark); color: #e9e4d8; padding
   color: #fff;
 }
 .faq-bot-title { font-size: 14px; letter-spacing: 0.04em; font-family: "Noto Serif TC", serif; }
-.faq-bot-close { background: none; border: none; color: #fff; font-size: 16px; opacity: 0.85; }
+.faq-bot-close {
+  background: none; border: none; color: #fff; font-size: 16px; opacity: 0.85;
+  width: 40px; height: 40px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  margin: -8px -10px -8px 0;
+  touch-action: manipulation;
+}
 .faq-bot-close:hover { opacity: 1; }
 .faq-bot-log { flex: 1; overflow-y: auto; padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; font-size: 13.5px; }
 .faq-bot-msg { max-width: 85%; padding: 10px 14px; border-radius: 14px; line-height: 1.65; white-space: pre-wrap; }
@@ -882,5 +889,5 @@ footer.site-footer { background: var(--color-teal-dark); color: #e9e4d8; padding
 
 @media (max-width: 720px) {
   .faq-bot-root { right: 16px; bottom: 76px; }
-  .faq-bot-panel { right: 12px; bottom: 140px; width: calc(100vw - 24px); }
+  .faq-bot-panel { right: 12px; bottom: 140px; width: calc(100vw - 24px); max-height: 56vh; }
 }
