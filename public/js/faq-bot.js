@@ -90,8 +90,12 @@
     quickSection.appendChild(quickToggle);
     quickSection.appendChild(quickWrap);
 
+    // 用實際量到的高度而不是猜一個固定值，避免問題變多/文字換行時「常見問題」清單被裁掉。
     function setQuickCollapsed(collapsed) {
       quickSection.classList.toggle("is-collapsed", collapsed);
+      quickSection.style.maxHeight = collapsed
+        ? quickToggle.offsetHeight + "px"
+        : quickSection.scrollHeight + "px";
     }
 
     const form = el("form", "faq-bot-form");
@@ -135,6 +139,8 @@
     function openPanel() {
       panel.hidden = false;
       toggle.classList.add("is-open");
+      // 面板 hidden 時量不到高度（display:none），要等真的顯示出來才能重新量一次。
+      setQuickCollapsed(quickSection.classList.contains("is-collapsed"));
       if (!log.dataset.greeted) {
         appendMessage(
           "您好，我是包安心客服小幫手 🙂\n可以直接輸入問題，或點下面常見問題快速查詢。",
