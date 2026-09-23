@@ -1,12 +1,38 @@
 /* 包安心 — 共用元件：導覽列、首次訂購須知彈窗、購物車側欄 */
 
 document.addEventListener("DOMContentLoaded", () => {
+  initMobileMenu();
   initNoticeModal();
   initCartDrawer();
   renderCartBadge();
   initRevealObserver();
   document.addEventListener("cart:change", renderCartBadge);
 });
+
+/* ---------- 手機版選單（漢堡按鈕展開導覽列） ---------- */
+function initMobileMenu() {
+  const toggle = document.querySelector("[data-nav-toggle]");
+  const nav = document.querySelector("nav.main-nav");
+  if (!toggle || !nav) return;
+
+  function setOpen(open) {
+    nav.classList.toggle("show-mobile", open);
+    toggle.setAttribute("aria-expanded", String(open));
+  }
+
+  toggle.addEventListener("click", (evt) => {
+    evt.stopPropagation();
+    setOpen(!nav.classList.contains("show-mobile"));
+  });
+
+  nav.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => setOpen(false)));
+
+  document.addEventListener("click", (evt) => {
+    if (nav.classList.contains("show-mobile") && !nav.contains(evt.target) && !toggle.contains(evt.target)) {
+      setOpen(false);
+    }
+  });
+}
 
 /* ---------- 首次進站訂購須知彈窗 ---------- */
 function initNoticeModal() {

@@ -43,7 +43,11 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  background: var(--color-bg);
+}
+:root[data-theme="dark"] html { background-color: transparent; }
 body {
   margin: 0;
   background: var(--color-bg);
@@ -209,6 +213,18 @@ nav.main-nav a:hover {
   color: var(--color-teal-dark);
 }
 nav.main-nav a:hover::after { transform: scaleX(1); }
+.nav-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  border-radius: 999px;
+  background: var(--color-pink-dark);
+  color: #fff;
+  vertical-align: middle;
+}
 
 .header-actions { display: flex; align-items: center; gap: 22px; }
 .icon-btn {
@@ -234,6 +250,7 @@ nav.main-nav a:hover::after { transform: scaleX(1); }
 }
 .theme-toggle { font-size: 17px; }
 .theme-toggle .theme-toggle-icon { line-height: 1; }
+.nav-toggle { display: none; font-size: 16px; }
 
 /* ---------------- Hero video ---------------- */
 .hero {
@@ -599,6 +616,31 @@ footer.site-footer { background: var(--color-teal-dark); color: #e9e4d8; padding
 @media (max-width: 720px) {
   .container { padding: 0 20px; }
   nav.main-nav { display: none; }
+  .nav-toggle { display: flex; }
+  nav.main-nav.show-mobile {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    gap: 0;
+    background: var(--color-surface);
+    padding: 4px 20px 14px;
+    border-bottom: 1px solid var(--color-line);
+    box-shadow: var(--shadow-soft);
+    z-index: 55;
+  }
+  nav.main-nav.show-mobile a {
+    padding: 14px 2px;
+    border-bottom: 1px solid var(--color-line);
+    text-transform: none;
+    font-size: 15px;
+    letter-spacing: 0.03em;
+  }
+  nav.main-nav.show-mobile a:last-child { border-bottom: none; }
+  nav.main-nav.show-mobile a:hover { transform: none; }
+  nav.main-nav.show-mobile a::after { display: none; }
   .trust-strip .container { grid-template-columns: repeat(2, 1fr); }
   .trust-item:nth-child(3) { border-left: none; }
   .product-grid { grid-template-columns: 1fr; }
