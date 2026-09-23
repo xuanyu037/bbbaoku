@@ -74,12 +74,25 @@
 
     const log = el("div", "faq-bot-log");
 
+    const quickSection = el("div", "faq-bot-quick-section");
+    const quickToggle = el("button", "faq-bot-quick-toggle");
+    quickToggle.type = "button";
+    quickToggle.innerHTML =
+      '<span>常見問題</span><span class="faq-bot-quick-chevron">▾</span>';
     const quickWrap = el("div", "faq-bot-quick");
     FAQ_ENTRIES.filter((e) => e.quick).forEach((entry) => {
       const chip = el("button", "faq-bot-chip", entry.question);
+      chip.type = "button";
       chip.addEventListener("click", () => handleAsk(entry.question));
       quickWrap.appendChild(chip);
     });
+    quickToggle.addEventListener("click", () => setQuickCollapsed(!quickSection.classList.contains("is-collapsed")));
+    quickSection.appendChild(quickToggle);
+    quickSection.appendChild(quickWrap);
+
+    function setQuickCollapsed(collapsed) {
+      quickSection.classList.toggle("is-collapsed", collapsed);
+    }
 
     const form = el("form", "faq-bot-form");
     const input = el("input", "faq-bot-input");
@@ -93,7 +106,7 @@
 
     panel.appendChild(header);
     panel.appendChild(log);
-    panel.appendChild(quickWrap);
+    panel.appendChild(quickSection);
     panel.appendChild(form);
 
     root.appendChild(panel);
@@ -112,6 +125,7 @@
 
     function handleAsk(question) {
       appendMessage(question, "user");
+      setQuickCollapsed(true);
       const match = findAnswer(question);
       window.setTimeout(() => {
         appendMessage(match ? match.answer : FALLBACK_ANSWER, "bot");
